@@ -23,7 +23,7 @@ app = FastAPI(
 
 # Initialize chatbot
 try:
-    from src.chatbot_simple import SimpleChatBot
+    from chatbot_simple import SimpleChatBot
     chatbot = SimpleChatBot()
     print("✅ Chatbot initialized successfully")
 except Exception as e:
@@ -40,10 +40,14 @@ async def chat(request: ChatRequest):
         return {"error": "Chatbot not initialized", "details": "Please check the server logs"}
     
     try:
+        print(f"Processing request: {request.query}")
         response = chatbot.process_input(request.query)
+        print(f"Response generated successfully")
         return {"response": response}
     except Exception as e:
-        return {"error": f"Error processing request: {str(e)}"}
+        error_msg = str(e)
+        print(f"Error in chat endpoint: {error_msg}")
+        return {"error": f"Error processing request: {error_msg}"}
 
 @app.get("/")
 async def root():
@@ -68,6 +72,31 @@ async def debug():
         "chatbot_initialized": chatbot is not None,
         "environment": "production"
     }
+
+@app.get("/test-openai")
+async def test_openai():
+    """Test OpenAI API connectivity directly"""
+    try:
+        from litellm import completion
+        
+        response = completion(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "Say hello"}],
+            max_tokens=10,
+            timeout=10
+        )
+        
+        return {
+            "status": "success",
+            "response": response.choices[0].message.content,
+            "model": "gpt-4o-mini"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
 
 @app.get("/test")
 async def test():
