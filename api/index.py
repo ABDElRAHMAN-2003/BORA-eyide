@@ -33,6 +33,31 @@ except Exception as e:
 class ChatRequest(BaseModel):
     query: str
 
+def get_fallback_response(user_input):
+    """Provide intelligent fallback responses when OpenAI is unavailable"""
+    user_input_lower = user_input.lower()
+    
+    # Greeting responses
+    if any(word in user_input_lower for word in ['hi', 'hello', 'hey', 'good morning', 'good afternoon']):
+        return "Hello! I'm your business intelligence assistant. I can help you with fraud analysis, market insights, and revenue analytics. What would you like to know?"
+    
+    # Identity questions
+    if any(word in user_input_lower for word in ['name', 'who are you', 'who built you', 'created by']):
+        return "I'm BORA, a business intelligence assistant designed to help with fraud detection, market analysis, and revenue insights. I'm currently running in fallback mode due to connection issues."
+    
+    # Business data questions
+    if any(word in user_input_lower for word in ['fraud', 'fraudulent', 'suspicious', 'security']):
+        return "I can help you with fraud analysis! Based on our data, we've identified several patterns including unusual transaction volumes, geographic anomalies, and time-based suspicious activities. Would you like me to elaborate on any specific aspect when the connection is restored?"
+    
+    if any(word in user_input_lower for word in ['market', 'trend', 'stock', 'trading', 'price']):
+        return "For market analysis, I can provide insights on trading patterns, market trends, and price movements. Our data shows various market indicators and performance metrics. I'll be able to give you detailed analysis once the connection is restored."
+    
+    if any(word in user_input_lower for word in ['revenue', 'income', 'profit', 'financial', 'money', 'earnings']):
+        return "Regarding revenue analytics, I can help you understand financial performance, earnings trends, and profit analysis. Our data includes revenue patterns, growth metrics, and financial indicators. I'll provide detailed insights when the connection is restored."
+    
+    # Default response
+    return "I understand your question about business intelligence. I'm currently experiencing connection issues with my AI service, but I can still help you with general business insights. Please try again in a few moments, or ask me about fraud analysis, market trends, or revenue analytics."
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """Process a chat request and return the bot's response"""
@@ -47,6 +72,15 @@ async def chat(request: ChatRequest):
     except Exception as e:
         error_msg = str(e)
         print(f"Error in chat endpoint: {error_msg}")
+        
+        # Check if it's a connection error and provide fallback
+        if "Connection error" in error_msg or "APIError" in error_msg:
+            fallback_response = get_fallback_response(request.query)
+            return {
+                "response": fallback_response,
+                "note": "This is a fallback response due to connection issues. Please try again later for full AI capabilities."
+            }
+        
         return {"error": f"Error processing request: {error_msg}"}
 
 @app.get("/")
@@ -79,18 +113,35 @@ async def test_openai():
     try:
         from litellm import completion
         
-        response = completion(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Say hello"}],
-            max_tokens=10,
-            timeout=10
-        )
+        # Try different models
+        models_to_try = ["gpt-3.5-turbo", "gpt-4o-mini", "gpt-4"]
         
+        for model in models_to_try:
+            try:
+                print(f"Trying model: {model}")
+                response = completion(
+                    model=model,
+                    messages=[{"role": "user", "content": "Say hello"}],
+                    max_tokens=10,
+                    timeout=10
+                )
+                
+                return {
+                    "status": "success",
+                    "response": response.choices[0].message.content,
+                    "model": model
+                }
+            except Exception as e:
+                print(f"Model {model} failed: {e}")
+                continue
+        
+        # If all models fail
         return {
-            "status": "success",
-            "response": response.choices[0].message.content,
-            "model": "gpt-4o-mini"
+            "status": "error",
+            "error": "All models failed to connect",
+            "error_type": "ConnectionError"
         }
+        
     except Exception as e:
         return {
             "status": "error",
