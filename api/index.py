@@ -16,15 +16,15 @@ if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not found in environment variables.")
 
 app = FastAPI(
-    title="CrewAI Chatbot API",
+    title="AI Chatbot API",
     description="A business intelligence chatbot powered by AI",
     version="1.0.0"
 )
 
 # Initialize chatbot
 try:
-    from chatbot import ChatBot
-    chatbot = ChatBot()
+    from chatbot_simple import SimpleChatBot
+    chatbot = SimpleChatBot()
     print("✅ Chatbot initialized successfully")
 except Exception as e:
     print(f"❌ Error initializing chatbot: {e}")
