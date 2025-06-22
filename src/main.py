@@ -37,6 +37,7 @@ async def health_check():
     """Health check endpoint for deployment monitoring"""
     return {"status": "healthy", "service": "crewai-chatbot"}
 
+# For Vercel deployment - this is the entry point
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port)
