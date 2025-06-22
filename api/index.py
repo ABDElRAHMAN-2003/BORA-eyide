@@ -6,7 +6,7 @@ import os
 # Add the src directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from chatbot import ChatBot
+from src.chatbot import ChatBot
 from dotenv import load_dotenv
 
 # Load environment variables
