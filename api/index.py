@@ -23,7 +23,7 @@ app = FastAPI(
 
 # Initialize chatbot
 try:
-    from chatbot_simple import SimpleChatBot
+    from src.chatbot_simple import SimpleChatBot
     chatbot = SimpleChatBot()
     print("✅ Chatbot initialized successfully")
 except Exception as e:
