@@ -1,0 +1,84 @@
+{
+  "_id": {
+    "$oid": "684da8fec1864ceb6b1eb988"
+  },
+  "ID": {
+    "oid": "603f7e57e2c13e277b02f3a1"
+  },
+  "intent": "Suspicious",
+  "category": "Risk",
+  "fraud_metrics": {
+    "incident_rate": "0.20",
+    "common_patterns": {
+      "Prevalence of Payment Fraud": "18.75% of transactions analyzed were classified as fraudulent, primarily involving high payment amounts.",
+      "High-Risk Cash Out": "The Cash Out transaction type represented a significant risk factor, with 1 out of 4 transactions showing signs of fraud."
+    }
+  },
+  "analysis": {
+    "cause": "The prevalence of fraudulent transactions was highly attributed to larger amounts being withdrawn via Cash Out, indicating a trend of exploiting vulnerable accounts.",
+    "recommendation": "To mitigate future risks, a multifaceted approach integrating advanced machine learning techniques and heightened scrutiny on high-value transactions is advised."
+  },
+  "transactions": [
+    {
+      "name": "Transaction 6",
+      "amount": 7107.77,
+      "currency": "USD",
+      "flag": "green",
+      "date": "2025-01-15",
+      "description": "Payment for goods",
+      "category": "PAYMENT",
+      "type": "PURCHASE",
+      "fraud_rate": 0.05
+    },
+    {
+      "name": "Transaction 14",
+      "amount": 4098.78,
+      "currency": "USD",
+      "flag": "green",
+      "date": "2025-02-10",
+      "description": "Payment for services",
+      "category": "PAYMENT",
+      "type": "PURCHASE",
+      "fraud_rate": 0.05
+    },
+    {
+      "name": "Transaction 15",
+      "amount": 229133.94,
+      "currency": "USD",
+      "flag": "red",
+      "date": "2025-02-20",
+      "description": "Large cash out transaction",
+      "category": "CASH_OUT",
+      "type": "WITHDRAWAL",
+      "fraud_rate": 0.85
+    },
+    {
+      "name": "Transaction 27",
+      "amount": 8009.09,
+      "currency": "USD",
+      "flag": "green",
+      "date": "2025-03-05",
+      "description": "Payment refund",
+      "category": "PAYMENT",
+      "type": "REFUND",
+      "fraud_rate": 0.1
+    }
+  ],
+  "fraud_rate_over_time": [
+    {
+      "date": "2025-01-01",
+      "fraud_rate": 0.15
+    },
+    {
+      "date": "2025-02-01",
+      "fraud_rate": 0.2
+    },
+    {
+      "date": "2025-03-01",
+      "fraud_rate": 0.25
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-06-14T16:53:18.846Z"
+  }
+}

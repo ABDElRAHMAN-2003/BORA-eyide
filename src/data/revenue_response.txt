@@ -1,0 +1,35 @@
+{
+  "_id": {
+    "$oid": "6853053fd43da6694d5a2345"
+  },
+  "revenue_forecast": "$1,500,000",
+  "confidence_level": "High",
+  "key_factors": {
+    "historical_growth": "High Positive",
+    "market_trend": "Moderate Positive",
+    "economic_conditions": "Moderate Negative",
+    "consumer_preferences_shifts": "High Positive",
+    "seasonality": "High Positive"
+  },
+  "analysis": {
+    "insights": "The revenue trend indicates promising growth driven by increasing demand in both corporate and home office furniture segments. Historical data shows strong sales performance in key months like June and November, aligning with the expected increase in office restocking and holiday purchases. The ongoing market trend towards sustainable and ergonomic office supplies reflects a shift in consumer preferences that positively impacts revenue growth. Economic conditions, however, pose some risks due to inflation and supply chain challenges.",
+    "recommendation": "To maximize revenue potential, it's recommended to focus marketing efforts on the top-performing regions and products during peak seasons. Emphasizing sustainable and ergonomic solutions in product offerings can capture evolving consumer trends while addressing possible economic barriers. Implementing targeted promotions and inventory strategies will be critical during Q2 and key month periods."
+  },
+  "monthly_forecast_next_year": {
+    "january": "$100,000",
+    "february": "$110,000",
+    "march": "$120,000",
+    "april": "$130,000",
+    "may": "$140,000",
+    "june": "$200,000",
+    "july": "$150,000",
+    "august": "$130,000",
+    "september": "$120,000",
+    "october": "$140,000",
+    "november": "$200,000",
+    "december": "$150,000"
+  },
+  "createdAt": {
+    "$date": "2025-06-18T18:28:15.671Z"
+  }
+}

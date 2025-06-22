@@ -1,0 +1,5 @@
+_id,text
+680e14e588c13e277b02f3bb,"Transaction 6: Type: PAYMENT, Amount: 7107.77, Originator: C154988899 (Balance Before: 183195.00, After: 176087.23), Recipient: M408069119 (Balance Before: 0.00, After: 0.00)"
+680e14e588c13e277b02f3c3,"Transaction 14: Type: PAYMENT, Amount: 4098.78, Originator: C1026483832 (Balance Before: 503264.00, After: 499165.22), Recipient: M1635378213 (Balance Before: 0.00, After: 0.00)"
+680e14e588c13e277b02f3c4,"Transaction 15: Type: CASH_OUT, Amount: 229133.94, Originator: C905080434 (Balance Before: 15325.00, After: 0.00), Recipient: C476402209 (Balance Before: 5083.00, After: 51513.44)"
+680e14e588c13e277b02f3d0,"Transaction 27: Type: PAYMENT, Amount: 8009.09, Originator: C1053967012 (Balance Before: 10968.00, After: 2958.91), Recipient: M295304806 (Balance Before: 0.00, After: 0.00)"

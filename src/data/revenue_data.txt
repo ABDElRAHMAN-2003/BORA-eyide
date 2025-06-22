@@ -1,0 +1,12 @@
+{
+  "_id": {
+    "$oid": "684f41192b31ae927cffa68a"
+  },
+  "originalFileName": "company_revenue.txt",
+  "content": "Row ID\tOrder ID\tOrder Date\tShip Date\tShip Mode\tCustomer ID\tCustomer Name\tSegment\tCountry\tCity\tState\tPostal Code\tRegion\tProduct ID\tCategory\tSub-Category\tProduct Name\tSales\n1\tCA-2017-152156\t08/11/2017\t11/11/2017\tSecond Class\tCG-12520\tClaire Gute\tConsumer\tUnited States\tHenderson\tKentucky\t42420\tSouth\tFUR-BO-10001798\tFurniture\tBookcases\tBush Somerset Collection Bookcase\t261.96\n2\tCA-2017-152156\t08/11/2017\t11/11/2017\tSecond Class\tCG-12520\tClaire Gute\tConsumer\tUnited States\tHenderson\tKentucky\t42420\tSouth\tFUR-CH-10000454\tFurniture\tChairs\tHon Deluxe Fabric Upholstered Stacking Chairs, Rounded Back\t731.94\n3\tCA-2017-138688\t12/06/2017\t16/06/2017\tSecond Class\tDV-13045\tDarrin Van Huff\tCorporate\tUnited States\tLos Angeles\tCalifornia\t90036\tWest\tOFF-LA-10000240\tOffice Supplies\tLabels\tSelf-Adhesive Address Labels for Typewriters by Universal\t14.62\n4\tUS-2016-108966\t11/10/2016\t18/10/2016\tStandard Class\tSO-20335\tSean O'Donnell\tConsumer\tUnited States\tFort Lauderdale\tFlorida\t33311\tSouth\tFUR-TA-10000577\tFurniture\tTables\tBretford CR4500 Series Slim Rectangular Table\t957.5775\n5\tUS-2016-108966\t11/10/2016\t18/10/2016\tStandard Class\tSO-20335\tSean O'Donnell\tConsumer\tUnited States\tFort Lauderdale\tFlorida\t33311\tSouth\tOFF-ST-10000760\tOffice Supplies\tStorage\tEldon Fold 'N Roll Cart System\t22.368\n6\tCA-2015-115812\t09/06/2015\t14/06/2015\tStandard Class\tBH-11710\tBrosina Hoffman\tConsumer\tUnited States\tLos Angeles\tCalifornia\t90032\tWest\tFUR-FU-10001487\tFurniture\tFurnishings\tEldon Expressions Wood and Plastic Desk Accessories, Cherry Wood\t48.86",
+  "uploadedAt": {
+    "$date": "2025-06-15T21:54:32.591Z"
+  },
+  "agent": "Revenue Agent",
+  "__v": 0
+}
