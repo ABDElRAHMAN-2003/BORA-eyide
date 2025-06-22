@@ -1,6 +1,7 @@
 import yaml
 import os
 import re
+import time
 from litellm import completion
 
 class SimpleChatBot:
@@ -139,6 +140,32 @@ class SimpleChatBot:
         
         return system_prompt
 
+    def call_openai_with_retry(self, messages, max_retries=3):
+        """Call OpenAI API with retry logic for connection issues"""
+        for attempt in range(max_retries):
+            try:
+                response = completion(
+                    model="gpt-4o-mini",
+                    messages=messages,
+                    max_tokens=500,
+                    temperature=0.7,
+                    timeout=30  # 30 second timeout
+                )
+                return response.choices[0].message.content
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"Attempt {attempt + 1} failed: {error_msg}")
+                
+                # If it's the last attempt, raise the error
+                if attempt == max_retries - 1:
+                    raise e
+                
+                # Wait before retrying (exponential backoff)
+                wait_time = 2 ** attempt
+                print(f"Waiting {wait_time} seconds before retry...")
+                time.sleep(wait_time)
+
     def process_input(self, user_input):
         """Process user input and return response"""
         # Detect user intent
@@ -164,19 +191,22 @@ class SimpleChatBot:
             print(f"- Data length: {len(relevant_data)} chars")
 
         try:
-            # Call the LLM directly using gpt-4o-mini
-            response = completion(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_input}
-                ],
-                max_tokens=500,
-                temperature=0.7
-            )
+            # Call the LLM with retry logic
+            response = self.call_openai_with_retry([
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ])
             
-            return response.choices[0].message.content
+            return response
             
         except Exception as e:
-            print(f"Error calling LLM: {e}")
-            return f"Sorry, I encountered an error: {str(e)}"
+            error_msg = str(e)
+            print(f"Final error calling LLM: {error_msg}")
+            
+            # Provide a more helpful error message
+            if "Connection error" in error_msg or "timeout" in error_msg.lower():
+                return "I'm experiencing temporary connection issues. Please try again in a few moments."
+            elif "rate limit" in error_msg.lower():
+                return "I'm currently experiencing high demand. Please try again in a minute."
+            else:
+                return f"Sorry, I encountered an error: {error_msg}"
