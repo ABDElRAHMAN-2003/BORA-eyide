@@ -55,6 +55,20 @@ async def health_check():
     status = "healthy" if chatbot is not None else "degraded"
     return {"status": status, "service": "ai-chatbot", "chatbot_initialized": chatbot is not None}
 
+@app.get("/debug")
+async def debug():
+    """Debug endpoint to check environment variables and configuration"""
+    api_key = os.getenv("OPENAI_API_KEY")
+    api_key_status = "✅ Set" if api_key else "❌ Not set"
+    api_key_preview = f"{api_key[:10]}..." if api_key and len(api_key) > 10 else "N/A"
+    
+    return {
+        "openai_api_key": api_key_status,
+        "api_key_preview": api_key_preview,
+        "chatbot_initialized": chatbot is not None,
+        "environment": "production"
+    }
+
 @app.get("/test")
 async def test():
     """Test endpoint to verify the API is working"""
