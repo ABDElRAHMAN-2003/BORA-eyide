@@ -6,7 +6,6 @@ import os
 # Add the src directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from src.chatbot import ChatBot
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -18,15 +17,17 @@ if not os.getenv("OPENAI_API_KEY"):
 
 app = FastAPI(
     title="CrewAI Chatbot API",
-    description="A business intelligence chatbot powered by CrewAI",
+    description="A business intelligence chatbot powered by AI",
     version="1.0.0"
 )
 
 # Initialize chatbot
 try:
+    from chatbot import ChatBot
     chatbot = ChatBot()
+    print("✅ Chatbot initialized successfully")
 except Exception as e:
-    print(f"Error initializing chatbot: {e}")
+    print(f"❌ Error initializing chatbot: {e}")
     chatbot = None
 
 class ChatRequest(BaseModel):
@@ -36,7 +37,7 @@ class ChatRequest(BaseModel):
 async def chat(request: ChatRequest):
     """Process a chat request and return the bot's response"""
     if chatbot is None:
-        return {"error": "Chatbot not initialized"}
+        return {"error": "Chatbot not initialized", "details": "Please check the server logs"}
     
     try:
         response = chatbot.process_input(request.query)
@@ -46,9 +47,15 @@ async def chat(request: ChatRequest):
 
 @app.get("/")
 async def root():
-    return {"message": "CrewAI Chatbot API is running. Use POST /chat to interact with the bot."}
+    return {"message": "AI Chatbot API is running. Use POST /chat to interact with the bot."}
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint for deployment monitoring"""
-    return {"status": "healthy", "service": "crewai-chatbot"} 
+    status = "healthy" if chatbot is not None else "degraded"
+    return {"status": status, "service": "ai-chatbot", "chatbot_initialized": chatbot is not None}
+
+@app.get("/test")
+async def test():
+    """Test endpoint to verify the API is working"""
+    return {"message": "API is working!", "timestamp": "now"}

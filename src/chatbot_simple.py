@@ -179,4 +179,4 @@ class SimpleChatBot:
             
         except Exception as e:
             print(f"Error calling LLM: {e}")
-            return f"Sorry, I encountered an error: {str(e)}" 
+            return f"Sorry, I encountered an error: {str(e)}"
