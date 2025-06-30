@@ -7,6 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.vector_db_pipeline import upsert_all_inputs, upsert_all_outputs, query_pinecone
 from pymongo import MongoClient
 import yaml
+from litellm import completion
 
 # Load environment variables from .env file
 load_dotenv()
@@ -112,14 +113,37 @@ EXPECTED OUTPUT: {task_config['expected_output']}
             system_prompt = f"Based on the context: {context}\n\nUser preferences: {user_pref}\n\nPlease provide a helpful response."
         
         # 4. Call your LLM as usual (e.g., OpenAI, local model, etc.)
-        # response = call_llm(system_prompt, request.query)
-        # For demo, just return the context and prompt:
-        return {
-            "response": f"Query: {request.query}\n\nContext retrieved: {len(context.split())} words\nUser preferences: {len(user_pref.split())} words",
-            "context": context, 
-            "user_pref": user_pref, 
-            "system_prompt": system_prompt
-        }
+        try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.query}
+            ]
+            
+            response = completion(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            ai_response = response.choices[0].message.content
+            
+            return {
+                "response": ai_response,
+                "context": context, 
+                "user_pref": user_pref, 
+                "system_prompt": system_prompt
+            }
+        except Exception as e:
+            print(f"Error calling LLM: {e}")
+            # Fallback response if LLM fails
+            return {
+                "response": f"Hello! I'm cornea, your AI assistant. I received your query: '{request.query}'. I can see your preference for mangoes! While I'm having some technical issues with my advanced response generation, I'm here to help. What would you like to know about?",
+                "context": context, 
+                "user_pref": user_pref, 
+                "system_prompt": system_prompt,
+                "note": "LLM response generation failed, using fallback response"
+            }
     except Exception as e:
         print(f"Unexpected error in chat endpoint: {e}")
         return {

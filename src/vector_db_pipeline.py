@@ -107,6 +107,18 @@ def upsert_all_outputs():
     upsert_latest_output("Revenue_LLM_Output", "revenue_output")
     upsert_latest_output("Market_LLM_Output", "market_output")
 
+# --- CHECK PINECONE DATA ---
+def check_pinecone_data():
+    """Check if Pinecone index has any data"""
+    try:
+        stats = index.describe_index_stats()
+        total_vector_count = stats.get('total_vector_count', 0)
+        print(f"Pinecone index has {total_vector_count} vectors")
+        return total_vector_count > 0
+    except Exception as e:
+        print(f"Error checking Pinecone data: {e}")
+        return False
+
 # --- QUERY FUNCTION FOR CHATBOT ---
 def query_pinecone(query_text, top_k=3):
     try:
@@ -114,10 +126,16 @@ def query_pinecone(query_text, top_k=3):
         print(f"Pinecone API Key present: {bool(PINECONE_API_KEY)}")
         print(f"HF Token present: {bool(HF_TOKEN)}")
         
+        # Check if Pinecone has data
+        has_data = check_pinecone_data()
+        if not has_data:
+            print("Pinecone index is empty - no data to search")
+            return ["No business data available yet. The system is still being populated with your documents."]
+        
         query_vector = get_hf_embedding(query_text)
         if query_vector is None:
             print("Failed to get embedding for query")
-            return []
+            return ["Unable to process your query at this time due to technical issues."]
             
         print(f"Query vector generated, length: {len(query_vector)}")
         
@@ -127,13 +145,17 @@ def query_pinecone(query_text, top_k=3):
             include_metadata=True
         )
         print("Raw Pinecone results:", results)  # Debug print
+        
+        if not results.get('matches'):
+            return ["No specific business data found for your query. I can help with general questions or you can ask about fraud analysis, market trends, or revenue data."]
+            
         return [match['metadata']['text'] for match in results['matches']]
     except Exception as e:
         print(f"Error in query_pinecone: {e}")
         print(f"Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
-        return []
+        return ["I'm experiencing technical difficulties accessing the business data. Please try again later."]
 
 # --- MAIN PIPELINE ---
 if __name__ == "__main__":
