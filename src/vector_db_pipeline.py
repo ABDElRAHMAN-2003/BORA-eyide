@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 from pymongo import MongoClient
-import pinecone
+from pinecone import Pinecone
 from huggingface_hub import InferenceClient
 import requests
 import json
@@ -19,8 +19,8 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
 # --- PINECONE SETUP ---
-pinecone.init(api_key=PINECONE_API_KEY)
-index = pinecone.Index(INDEX_NAME)
+pc = Pinecone(api_key=PINECONE_API_KEY)
+index = pc.Index(INDEX_NAME)
 
 # --- HUGGINGFACE HUB CLIENT SETUP ---
 hf_client = InferenceClient(token=HF_TOKEN)
