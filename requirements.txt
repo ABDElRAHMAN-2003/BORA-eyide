@@ -4,7 +4,7 @@ pydantic==2.11.7
 python-dotenv==1.1.0
 litellm==1.72.0
 pyyaml==6.0.2
-pinecone==2.2.4
+pinecone>=3.0.0
 requests
 apscheduler==3.10.4
 pymongo==4.6.1
