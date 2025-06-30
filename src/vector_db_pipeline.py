@@ -31,19 +31,29 @@ def get_hf_embedding(text):
         print(f"[Warning] Skipping empty or invalid text: {repr(text)}")
         return None
     print(f"Embedding text: {repr(text)}")
-    embedding = hf_client.feature_extraction(
-        text,
-        model="intfloat/multilingual-e5-large",
-    )
-    # Convert ndarray to list if needed
-    if hasattr(embedding, "tolist"):
-        embedding = embedding.tolist()
-    if isinstance(embedding, list) and isinstance(embedding[0], list):
-        embedding = embedding[0]
-    if len(embedding) != 1024:
-        print(f"[Warning] Embedding dimension is {len(embedding)}, expected 1024.")
+    try:
+        embedding = hf_client.feature_extraction(
+            text,
+            model="intfloat/multilingual-e5-large",
+        )
+        print(f"Raw embedding result: {type(embedding)}")
+        
+        # Convert ndarray to list if needed
+        if hasattr(embedding, "tolist"):
+            embedding = embedding.tolist()
+        if isinstance(embedding, list) and isinstance(embedding[0], list):
+            embedding = embedding[0]
+        if len(embedding) != 1024:
+            print(f"[Warning] Embedding dimension is {len(embedding)}, expected 1024.")
+            return None
+        print(f"Final embedding length: {len(embedding)}")
+        return embedding
+    except Exception as e:
+        print(f"Error in get_hf_embedding: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         return None
-    return embedding
 
 # --- UPSERT FUNCTIONS ---
 def upsert_mongo_collection(collection_name, prefix):
@@ -99,14 +109,31 @@ def upsert_all_outputs():
 
 # --- QUERY FUNCTION FOR CHATBOT ---
 def query_pinecone(query_text, top_k=3):
-    query_vector = get_hf_embedding(query_text)
-    results = index.query(
-        vector=query_vector,
-        top_k=top_k,
-        include_metadata=True
-    )
-    print("Raw Pinecone results:", results)  # Debug print
-    return [match['metadata']['text'] for match in results['matches']]
+    try:
+        print(f"Starting Pinecone query for: {query_text}")
+        print(f"Pinecone API Key present: {bool(PINECONE_API_KEY)}")
+        print(f"HF Token present: {bool(HF_TOKEN)}")
+        
+        query_vector = get_hf_embedding(query_text)
+        if query_vector is None:
+            print("Failed to get embedding for query")
+            return []
+            
+        print(f"Query vector generated, length: {len(query_vector)}")
+        
+        results = index.query(
+            vector=query_vector,
+            top_k=top_k,
+            include_metadata=True
+        )
+        print("Raw Pinecone results:", results)  # Debug print
+        return [match['metadata']['text'] for match in results['matches']]
+    except Exception as e:
+        print(f"Error in query_pinecone: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 # --- MAIN PIPELINE ---
 if __name__ == "__main__":
