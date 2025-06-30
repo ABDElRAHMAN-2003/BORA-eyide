@@ -23,7 +23,7 @@ pinecone.init(api_key=PINECONE_API_KEY)
 index = pinecone.Index(INDEX_NAME)
 
 # --- HUGGINGFACE HUB CLIENT SETUP ---
-hf_client = InferenceClient(provider="hf-inference", api_key=HF_TOKEN)
+hf_client = InferenceClient(api_key=HF_TOKEN)
 
 # --- EMBEDDING FUNCTION (Hugging Face InferenceClient, 1024-dim) ---
 def get_hf_embedding(text):
