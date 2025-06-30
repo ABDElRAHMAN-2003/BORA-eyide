@@ -23,14 +23,27 @@ db = client[DB_NAME]
 
 # Load agent and task config from YAML
 config_dir = os.path.join(os.path.dirname(__file__), 'config')
-with open(os.path.join(config_dir, 'agents.yaml'), 'r') as f:
-    agents_config = yaml.safe_load(f)
-with open(os.path.join(config_dir, 'tasks.yaml'), 'r') as f:
-    tasks_config = yaml.safe_load(f)
-
-AGENT_KEY = list(agents_config.keys())[0]
-agent_config = agents_config[AGENT_KEY]
-task_config = tasks_config['chat_response']
+try:
+    with open(os.path.join(config_dir, 'agents.yaml'), 'r') as f:
+        agents_config = yaml.safe_load(f)
+    with open(os.path.join(config_dir, 'tasks.yaml'), 'r') as f:
+        tasks_config = yaml.safe_load(f)
+    
+    AGENT_KEY = list(agents_config.keys())[0]
+    agent_config = agents_config[AGENT_KEY]
+    task_config = tasks_config['chat_response']
+except Exception as e:
+    print(f"Warning: Could not load YAML config: {e}")
+    # Fallback configuration
+    agent_config = {
+        'role': 'Business Intelligence Assistant',
+        'goal': 'Provide helpful business insights and analysis',
+        'backstory': 'An AI assistant specialized in business intelligence'
+    }
+    task_config = {
+        'description_template': 'Based on the following relevant data: {relevant_data}\n\nPlease provide a helpful response to the user query.',
+        'expected_output': 'A clear, helpful response based on the available context and user preferences.'
+    }
 
 app = FastAPI(
     title="CrewAI Chatbot API with Pinecone RAG",
@@ -64,15 +77,27 @@ def on_startup():
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """Process a chat request and return the bot's response"""
-    # 1. Retrieve relevant context from Pinecone
-    relevant_contexts = query_pinecone(request.query)
-    context = "\n".join(relevant_contexts)
-    # 2. Retrieve user preferences from MongoDB
-    user_pref_doc = db["User_Pref"].find_one(sort=[("updatedAt", -1)])
-    user_pref = user_pref_doc["description"] if user_pref_doc and "description" in user_pref_doc else "No user preferences found."
-    # 3. Build system prompt using agent and task config
-    relevant_data = f"User Preferences: {user_pref}\n\nContext: {context}"
-    system_prompt = f"""
+    try:
+        # 1. Retrieve relevant context from Pinecone
+        try:
+            relevant_contexts = query_pinecone(request.query)
+            context = "\n".join(relevant_contexts) if relevant_contexts else "No relevant context found."
+        except Exception as e:
+            print(f"Error querying Pinecone: {e}")
+            context = "Unable to retrieve context at this time."
+        
+        # 2. Retrieve user preferences from MongoDB
+        try:
+            user_pref_doc = db["User_Pref"].find_one(sort=[("updatedAt", -1)])
+            user_pref = user_pref_doc["description"] if user_pref_doc and "description" in user_pref_doc else "No user preferences found."
+        except Exception as e:
+            print(f"Error retrieving user preferences: {e}")
+            user_pref = "Unable to retrieve user preferences at this time."
+        
+        # 3. Build system prompt using agent and task config
+        try:
+            relevant_data = f"User Preferences: {user_pref}\n\nContext: {context}"
+            system_prompt = f"""
 ROLE: {agent_config['role']}
 GOAL: {agent_config['goal']}
 BACKSTORY: {agent_config['backstory']}
@@ -82,10 +107,26 @@ TASK DESCRIPTION:
 
 EXPECTED OUTPUT: {task_config['expected_output']}
 """
-    # 4. Call your LLM as usual (e.g., OpenAI, local model, etc.)
-    # response = call_llm(system_prompt, request.query)
-    # For demo, just return the context and prompt:
-    return {"context": context, "user_pref": user_pref, "system_prompt": system_prompt}
+        except Exception as e:
+            print(f"Error building system prompt: {e}")
+            system_prompt = f"Based on the context: {context}\n\nUser preferences: {user_pref}\n\nPlease provide a helpful response."
+        
+        # 4. Call your LLM as usual (e.g., OpenAI, local model, etc.)
+        # response = call_llm(system_prompt, request.query)
+        # For demo, just return the context and prompt:
+        return {
+            "response": f"Query: {request.query}\n\nContext retrieved: {len(context.split())} words\nUser preferences: {len(user_pref.split())} words",
+            "context": context, 
+            "user_pref": user_pref, 
+            "system_prompt": system_prompt
+        }
+    except Exception as e:
+        print(f"Unexpected error in chat endpoint: {e}")
+        return {
+            "error": "An error occurred while processing your request",
+            "details": str(e),
+            "response": "I'm experiencing technical difficulties. Please try again later."
+        }
 
 @app.get("/")
 async def root():
