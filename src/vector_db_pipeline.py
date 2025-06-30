@@ -4,6 +4,7 @@ load_dotenv()
 from pymongo import MongoClient
 from pinecone import Pinecone
 from huggingface_hub import InferenceClient
+from litellm import embedding
 import requests
 import json
 
@@ -11,8 +12,8 @@ import json
 MONGO_URI = "mongodb+srv://Ali:suy4C1XDn5fHQOyd@nulibrarysystem.9c6hrww.mongodb.net/sample_db"
 DB_NAME = "sample_db"
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-HF_TOKEN = os.getenv("HF_TOKEN")
-INDEX_NAME = "cornea"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Make sure this is set
+INDEX_NAME = "corrnea"  # 1536-dim Pinecone index for OpenAI embeddings
 
 # --- MONGODB SETUP ---
 client = MongoClient(MONGO_URI)
@@ -23,33 +24,28 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(INDEX_NAME)
 
 # --- HUGGINGFACE HUB CLIENT SETUP ---
-hf_client = InferenceClient(token=HF_TOKEN)
+hf_client = InferenceClient(token=PINECONE_API_KEY)
 
-# --- EMBEDDING FUNCTION (Hugging Face InferenceClient, 1024-dim) ---
-def get_hf_embedding(text):
+# --- EMBEDDING FUNCTION (OpenAI text-embedding-ada-002, 1536-dim) ---
+def get_openai_embedding(text):
     if not isinstance(text, str) or not text.strip():
         print(f"[Warning] Skipping empty or invalid text: {repr(text)}")
         return None
     print(f"Embedding text: {repr(text)}")
     try:
-        embedding = hf_client.feature_extraction(
-            text,
-            model="intfloat/multilingual-e5-large",
+        result = embedding(
+            model="text-embedding-ada-002",
+            input=text,
+            api_key=OPENAI_API_KEY
         )
-        print(f"Raw embedding result: {type(embedding)}")
-        
-        # Convert ndarray to list if needed
-        if hasattr(embedding, "tolist"):
-            embedding = embedding.tolist()
-        if isinstance(embedding, list) and isinstance(embedding[0], list):
-            embedding = embedding[0]
-        if len(embedding) != 1024:
-            print(f"[Warning] Embedding dimension is {len(embedding)}, expected 1024.")
+        vector = result['data'][0]['embedding']
+        if len(vector) != 1536:
+            print(f"[Warning] Embedding dimension is {len(vector)}, expected 1536.")
             return None
-        print(f"Final embedding length: {len(embedding)}")
-        return embedding
+        print(f"Final embedding length: {len(vector)}")
+        return vector
     except Exception as e:
-        print(f"Error in get_hf_embedding: {e}")
+        print(f"Error in get_openai_embedding: {e}")
         print(f"Error type: {type(e).__name__}")
         import traceback
         traceback.print_exc()
@@ -63,7 +59,7 @@ def upsert_mongo_collection(collection_name, prefix):
         text = doc.get("content", "")
         if not isinstance(text, str):
             text = str(text)
-        vector = get_hf_embedding(text)
+        vector = get_openai_embedding(text)
         if vector is None or all(v == 0.0 for v in vector):
             continue
         pinecone_vectors.append({
@@ -91,7 +87,7 @@ def upsert_latest_output(collection_name, prefix):
             text = json.dumps(doc_copy, default=str)[:2000]
         if not isinstance(text, str):
             text = str(text)
-        vector = get_hf_embedding(text)
+        vector = get_openai_embedding(text)
         if vector is None or all(v == 0.0 for v in vector):
             print(f"[Warning] Skipping upsert for {prefix}_latest due to empty/invalid vector.")
             return
@@ -124,7 +120,7 @@ def query_pinecone(query_text, top_k=3):
     try:
         print(f"Starting Pinecone query for: {query_text}")
         print(f"Pinecone API Key present: {bool(PINECONE_API_KEY)}")
-        print(f"HF Token present: {bool(HF_TOKEN)}")
+        print(f"OpenAI API Key present: {bool(OPENAI_API_KEY)}")
         
         # Check if Pinecone has data
         has_data = check_pinecone_data()
@@ -132,7 +128,7 @@ def query_pinecone(query_text, top_k=3):
             print("Pinecone index is empty - no data to search")
             return ["No business data available yet. The system is still being populated with your documents."]
         
-        query_vector = get_hf_embedding(query_text)
+        query_vector = get_openai_embedding(query_text)
         if query_vector is None:
             print("Failed to get embedding for query")
             return ["Unable to process your query at this time due to technical issues."]
