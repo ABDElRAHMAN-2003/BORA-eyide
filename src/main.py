@@ -8,6 +8,7 @@ from src.vector_db_pipeline import upsert_all_inputs, upsert_all_outputs, query_
 from pymongo import MongoClient
 import yaml
 from litellm import completion
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -75,6 +76,49 @@ def on_startup():
     # Start background scheduler
     start_scheduler()
 
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+SERPER_API_URL = "https://google.serper.dev/search"
+
+def web_search_serper(query):
+    if not SERPER_API_KEY:
+        return None
+    headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
+    payload = {"q": query}
+    try:
+        resp = requests.post(SERPER_API_URL, headers=headers, json=payload, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        # Extract top 3 results (title + snippet + link)
+        results = data.get("organic", [])[:3]
+        if not results:
+            return None
+        summary = "\n".join([
+            f"{r.get('title', '')}: {r.get('snippet', '')} ({r.get('link', '')})" for r in results
+        ])
+        return summary
+    except Exception as e:
+        print(f"Serper web search error: {e}")
+        return None
+
+def is_uncertain_response(response_text):
+    patterns = [
+        "I don't have specific information",
+        "I don't know",
+        "I recommend checking",
+        "I'm not sure",
+        "I do not have information",
+        "I couldn't find information",
+        "I don't have details",
+        "I don't have data",
+        "I don't have access",
+        "I suggest checking",
+        "For the latest updates",
+        "I recommend visiting",
+        "please check",
+        "not available to me"
+    ]
+    return any(p.lower() in response_text.lower() for p in patterns)
+
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """Process a chat request and return the bot's response"""
@@ -86,6 +130,13 @@ async def chat(request: ChatRequest):
         except Exception as e:
             print(f"Error querying Pinecone: {e}")
             context = "Unable to retrieve context at this time."
+        # --- Web search fallback ---
+        if not context or context.strip() in ["No relevant context found.", "Unable to retrieve context at this time."]:
+            web_context = web_search_serper(request.query)
+            if web_context:
+                context = f"[Web Search Results]:\n{web_context}"
+            else:
+                context = context  # keep as is if web search fails
         
         # 2. Retrieve user preferences from MongoDB
         try:
@@ -127,6 +178,35 @@ EXPECTED OUTPUT: {task_config['expected_output']}
             )
             
             ai_response = response.choices[0].message.content
+            
+            # --- Fallback: If LLM doesn't know, try Serper web search and re-ask ---
+            if is_uncertain_response(ai_response):
+                web_context = web_search_serper(request.query)
+                if web_context:
+                    # Update context and system prompt, re-call LLM
+                    context = f"[Web Search Results]:\n{web_context}"
+                    relevant_data = f"User Preferences: {user_pref}\n\nContext: {context}"
+                    system_prompt = f"""
+ROLE: {agent_config['role']}
+GOAL: {agent_config['goal']}
+BACKSTORY: {agent_config['backstory']}
+
+TASK DESCRIPTION:
+{task_config['description_template'].format(relevant_data=relevant_data)}
+
+EXPECTED OUTPUT: {task_config['expected_output']}
+"""
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": request.query}
+                    ]
+                    response = completion(
+                        model="gpt-4o-mini",
+                        messages=messages,
+                        max_tokens=500,
+                        temperature=0.7
+                    )
+                    ai_response = response.choices[0].message.content
             
             return {
                 "response": ai_response,
